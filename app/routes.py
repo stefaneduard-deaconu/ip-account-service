@@ -1,3 +1,6 @@
+import random
+import string
+
 from app import app
 from app import mongo
 from flask import render_template_string, request
@@ -20,75 +23,44 @@ def index():
         db=db,
         users=users
     )
+def generate_user_id(num_char):
+    """
+    for a user, generate a unique id of nun_char characters
+    :return: user_id: str
+    """
+    letters = string.ascii_lowercase + string.ascii_uppercase + string.digits
+    return ''.join(random.choice(letters) for i in range(num_char))
 
-# 
-# @app.route('/docs', methods=['POST'])
-# def upload_docs():
-#     req_data = request.get_json()
-#     user_id = req_data.get('userId')
-#     docs = req_data.get('docs')  # a list of docs
-#     for i in range(len(docs)):
-#         docs[i]['userId'] = user_id
-#     #  lucram cu db
-#     db_docs = mongo.db.docs.find({"userId": user_id})
-#     db_docs_ids = [doc.get('docId') for doc in db_docs]
-#     docs_new = [doc for doc in docs if doc.get('docId') not in db_docs_ids]
-#     docs_update = [doc for doc in docs if doc.get('docId') in db_docs_ids]
-#     if docs_new:  # this can later be treated as an error, we sent no docs
-#         mongo.db.docs.insert_many(docs_new)
-#     for doc in docs_update:
-#         query = {"docId": doc.get('docId'), 'userId': user_id}
-#         updates = {"$set": doc}
-#         mongo.db.docs.update_one(query, updates)
-#     #
-#     return '{ "error": false }'
-# 
-# 
-# @app.route('/docs', methods=['DELETE'])
-# def delete_docs():
-#     req_data = request.get_json()
-#     user_id = req_data.get('userId')
-#     #
-#     mongo.db.docs.delete_many({"userId": user_id})
-#     #
-#     return '{ "error": false }'
-# 
-# 
-# @app.route('/docs/<user_id>', methods=['POST'])
-# def create_doc(user_id):
-#     req_data = request.get_json()
-#     doc = req_data.get('doc')
-#     doc = {**doc, 'userId': user_id}
-#     #
-#     mongo.db.docs.insert_one(doc)
-#     return '{ "error": false}'
-# 
-# 
-# @app.route('/docs/<user_id>', methods=['PUT'])
-# def update_doc(user_id):
-#     req_data = request.get_json()
-#     doc = req_data.get('doc')
-#     doc_id = doc.get('docId')
-#     #
-#     mongo.db.docs.update_one(
-#         {"docId": doc_id, "userId": user_id},
-#         { '$set': doc }
-#     )
-#     #
-#     return '{ "error": false}'
-# 
-# 
-# @app.route('/docs/<user_id>', methods=['DELETE'])
-# def delete_doc(user_id):
-#     req_data = request.get_json()
-#     doc_id = req_data.get('docId')
-#     #
-#     mongo.db.docs.delete_one(
-#         {'docId': doc_id, 'userId': user_id}
-#     )
-#     #
-#     return '{ "error": false}'
-# 
-# 
+
+@app.route('/user', methods=['POST'])
+def create_user():
+    req_data = request.get_json()
+    user = req_data.get('user')
+    user_id = generate_user_id(128)
+    mongo.db.users.insert_one({**user, "user_id": user_id})
+    return '{ "error": false , "user_id":' + user_id + '}'
+
+@app.route('/user', methods=['PUT'])
+def update_user():
+    req_data = request.get_json()
+    user = req_data.get('user')
+    mongo.db.docs.update_one(
+        {"userName": user.get('userName'), "email": user.get('email')},
+        { '$set': user }
+    )
+    return '{ "error": false}'
+
+@app.route('/user', methods=['DELETE'])
+def delete_user():
+    req_data = request.get_json()
+    mongo.db.docs.delete({"password": req_data.get('password'), "email": req_data.get('email')})
+    return '{ "error": false}'
+
+@app.route('/auth', methods=['POST'])
+def authenticate_user():
+    req_data = request.get_json()
+    user = mongo.db.users.find({"email": req_data.get('email'), "password": req_data.get('password')})
+    return '{ "error": false , "authToken":' + generate_user_id(32) + '}'
+
 
 
