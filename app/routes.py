@@ -60,7 +60,10 @@ def delete_user():
 def authenticate_user():
     req_data = request.get_json()
     user = mongo.db.users.find({"email": req_data.get('email'), "password": req_data.get('password')})
-    return '{ "error": false , "authToken":' + generate_user_id(32) + '}'
+    if(user.hasNext()):
+        return '{ "error": false , "authToken":' + generate_user_id(32) + '}'
+    else:
+        return '{ "error" : true }'
 
 
 
