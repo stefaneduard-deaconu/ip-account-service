@@ -1,2 +1,3 @@
 # ip-account-service
-# ip-api-gateway
+
+This service only serves users, with the main routes for CREATEing, READing (/auth), UPDATEing, and DELETEing them.
