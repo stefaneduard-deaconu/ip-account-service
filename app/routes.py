@@ -34,6 +34,17 @@ def generate_user_id(num_char):
     return ''.join(random.choice(letters) for i in range(num_char))
 
 
+@app.route('/user_id', methods=['GET'])
+def det_id():
+    req_data = request.get_json()  # it mush be 'authToken'
+    user = mongo.db.users.find({"authToken": req_data.get('authToken')},
+                                {"_id": 0})
+    if not user.alive:
+        return '{ "error": true }'
+    user_id = user.next().get('userId')
+    return jsonify(userId=user_id, error=False)
+
+
 @app.route('/user', methods=['GET'])
 def read_user():
     req_data = request.get_json()  # it mush be 'password' and 'email'
@@ -45,7 +56,7 @@ def read_user():
     if not users.alive:
         return '{ "error": true }'
     user = users.next()
-    return jsonify(user=user, error='false')
+    return jsonify(user=user, error=False)
 
 
 @app.route('/user', methods=['POST'])
@@ -68,7 +79,11 @@ def update_user():
     user = req_data.get('user')
     # there can be an error, if there's no such user
     query = {"email": user.get('email'), "password": user.get('password')}
-    if not mongo.db.users.find(query).count():
+    users = mongo.db.users.find(query) 
+    if not users.count():
+        return '{ "error": true}'
+    this_user = users.next()
+    if this_user.get('authToken') != user.get('authToken'):
         return '{ "error": true}'
     mongo.db.users.update_one(
         query,
